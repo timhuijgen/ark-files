@@ -1,0 +1,22 @@
+{
+  "name": "ark-files",
+  "version": "1.0.0",
+  "description": "Read ark player profiles & tribe data from the saved files",
+  "main": "ArkFilesData.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": {
+    "name": "Tim Huijgen",
+    "email": "timhuijgen@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/timhuijgen/ark-files.git"
+  },
+  "bugs": {
+    "url": "https://github.com/timhuijgen/ark-files/issues"
+  },
+  "homepage": "https://github.com/timhuijgen/easy-api#readme",
+  "license": "MIT"
+}
