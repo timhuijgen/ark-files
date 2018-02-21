@@ -2,7 +2,7 @@
 Read and parse Ark player profile and tribe files
 
 Install:
-`npm install`
+`npm install --save ark-files`
 
 Usage:
 ```
@@ -42,6 +42,7 @@ let tribes = arkFiles.getTribes();
 
 ```
 
-Players and tribes are cached in memory with a default period of 5 minutes. 
-You can pass an overwrite to the constructor.
+Players and tribes are cached in memory with a default valid period of 5 minutes. 
+You can pass an overwrite to the constructor in seconds:
+
 `new ArkFiles('/path/', (60 * 60))`
