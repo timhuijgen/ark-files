@@ -1,6 +1,6 @@
 {
   "name": "ark-files",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Read ark player profiles & tribe data from the saved files",
   "main": "ArkFilesData.js",
   "scripts": {
