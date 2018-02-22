@@ -5,7 +5,7 @@ Install:
 `npm install --save ark-files`
 
 Usage:
-```
+```js
 const ArkFiles = require('ark-files');
 
 let arkFiles = new ArkFiles('/path/to/my/ark/server/folder');
@@ -46,4 +46,6 @@ let tribes = arkFiles.getTribes();
 Players and tribes are cached in memory with a default valid period of 5 minutes. 
 You can pass an override to the constructor in seconds:
 
-`new ArkFiles('/path/', (60 * 60))`
+```js
+new ArkFiles('/path/', (60 * 60)); // 1 hour 
+```
