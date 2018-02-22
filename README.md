@@ -8,18 +8,19 @@ Usage:
 ```
 const ArkFiles = require('ark-files');
 
-let arkFiles = new ArkFiles('/path/to/my/ark/server/folder/Ark');
+let arkFiles = new ArkFiles('/path/to/my/ark/server/folder');
 let players = arkFiles.getPlayers();
 
 /**
 * Players structure:
 * [{
-* Tribe: Tribe|false,
+* Tribe: Tribe|undefined,
 * PlayerName: string,
 * Level: Number,
 * TotalEngramPoints: Number,
-* CharacterName, 
-* TribeId: Number, 
+* CharacterName: string,
+* TribeId: Number|undefined,
+* SteamId: Number,
 * PlayerId: Number,
 * FileCreated: string,
 * FileUpdated: string
@@ -43,6 +44,6 @@ let tribes = arkFiles.getTribes();
 ```
 
 Players and tribes are cached in memory with a default valid period of 5 minutes. 
-You can pass an overwrite to the constructor in seconds:
+You can pass an override to the constructor in seconds:
 
 `new ArkFiles('/path/', (60 * 60))`

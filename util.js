@@ -41,6 +41,11 @@ function getSteamId(data) {
     return parseInt(data.slice(start, end));
 }
 
+/**
+ * @param search
+ * @param data
+ * @returns {string}
+ */
 function getString(search, data) {
     let type = "StrProperty";
     data = new Buffer(data);

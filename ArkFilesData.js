@@ -134,12 +134,14 @@ class ArkFilesData {
      *
      * @param file
      * @returns {{
-     * Tribe: boolean|Tribe,
-     * PlayerName,
+     * Tribe: Tribe|undefined,
+     * PlayerName: string,
      * Level: Number,
      * TotalEngramPoints: Number,
-     * CharacterName, TribeId:
-     * Number, PlayerId: Number,
+     * CharacterName: string,
+     * TribeId: Number|undefined,
+     * SteamId: Number,
+     * PlayerId: Number,
      * FileCreated: string,
      * FileUpdated: string
      * }}
@@ -150,12 +152,12 @@ class ArkFilesData {
             fileData = fs.statSync(path.join(this.arkFilesDir, file));
 
         return {
-            Tribe: false,
+            Tribe: undefined,
             PlayerName: util.getString("PlayerName", data),
             Level: parseInt(util.getUInt16("CharacterStatusComponent_ExtraCharacterLevel", data) + 1),
             TotalEngramPoints: parseInt(util.getInt("PlayerState_TotalEngramPoints", data)),
             CharacterName: util.getString("PlayerCharacterName", data),
-            TribeId: parseInt(util.getInt("TribeID", data)),
+            TribeId: parseInt(util.getInt("TribeID", data)) || undefined,
             SteamId: parseInt(util.getSteamId(data)),
             PlayerId: parseInt(util.getPlayerId(data)),
             FileCreated: new Date(fileData.birthtime).toISOString().slice(0, 19).replace('T', ' '),
@@ -169,7 +171,7 @@ class ArkFilesData {
      * @param file
      * @returns {{
      * Players: Array,
-     * Name: *,
+     * Name: string,
      * OwnerId: Number,
      * Id: Number,
      * FileCreated: string,
