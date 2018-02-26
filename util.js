@@ -4,7 +4,7 @@
  */
 
 /**
- *
+ * Exports
  * @type {{getString: getString, getStringArray: getStringArray, getInt: getInt, getUInt16: getUInt16, getUInt32: getUInt32, time: time, getPlayerId: getPlayerId, getSteamId: getSteamId}}
  */
 module.exports = {
@@ -15,7 +15,7 @@ module.exports = {
     getUInt32: getUInt32,
     time: time,
     getPlayerId: getPlayerId,
-    getSteamId: getSteamId,
+    getSteamId: getSteamId
 };
 
 /**
@@ -64,10 +64,10 @@ function getString(search, data) {
 
 
 /**
- * Get the tribe logs
+ * Get string array values from data
  * @param {string} property
  * @param {string} data
- * @returns {Array} tribeLogs
+ * @returns {Array}
  */
 function getStringArray(property, data) {
     // Create Buffer
@@ -99,7 +99,7 @@ function getStringArray(property, data) {
         // Push the item & trim hex zero's from the string
         arr.push(str.replace(/\0[\s\S]*$/g,''));
     }
-    // Return tribeLogs;
+
     return arr;
 }
 
