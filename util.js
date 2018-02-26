@@ -4,17 +4,18 @@
  */
 
 /**
- * Export functions
- * @type {{getString: getString, getInt: getInt, getUInt16: getUInt16, getUInt32: getUInt32, time: time, getPlayerId: getPlayerId, getSteamId: getSteamId}}
+ *
+ * @type {{getString: getString, getStringArray: getStringArray, getInt: getInt, getUInt16: getUInt16, getUInt32: getUInt32, time: time, getPlayerId: getPlayerId, getSteamId: getSteamId}}
  */
 module.exports = {
     getString: getString,
+    getStringArray: getStringArray,
     getInt: getInt,
     getUInt16: getUInt16,
     getUInt32: getUInt32,
     time: time,
     getPlayerId: getPlayerId,
-    getSteamId: getSteamId
+    getSteamId: getSteamId,
 };
 
 /**
@@ -59,6 +60,47 @@ function getString(search, data) {
     let midlength = mid - (num + type.length + 12 === 255 ? 6 : 5);
     let start = num + type.length + 13;
     return data.toString('utf8', start, start + midlength);
+}
+
+
+/**
+ * Get the tribe logs
+ * @param {string} property
+ * @param {string} data
+ * @returns {Array} tribeLogs
+ */
+function getStringArray(property, data) {
+    // Create Buffer
+    let buffer = new Buffer(data),
+        arr = [],
+        // Get the offset of the property entry
+        searchOffset = buffer.indexOf(property);
+
+    // Return empty array if there is none
+    if(searchOffset === -1) { return arr; }
+
+    // Get the offset of StrProperty after the property, and add 12 for the length of StrProperty
+    let arrayPropTypeOffset = buffer.indexOf('StrProperty', searchOffset) + 12,
+        // Read the array length
+        arrayLength = buffer.readUInt8(arrayPropTypeOffset);
+
+    // Initial offset for loop plus 4 for the UInt8
+    let offset = arrayPropTypeOffset + 4;
+    // Loop for array length
+    for(let i = 0; i < arrayLength; i++) {
+        // Read the size of the string
+        let strSize = buffer.readUInt8(offset);
+        // Offset for the UInt8
+        offset += 4;
+        // Read the string for the specified length
+        let str = buffer.toString('utf8', offset, offset + strSize);
+        // Offset the string length for the next iteration
+        offset += strSize;
+        // Push the item & trim hex zero's from the string
+        arr.push(str.replace(/\0[\s\S]*$/g,''));
+    }
+    // Return tribeLogs;
+    return arr;
 }
 
 function getInt(search, data) {
@@ -112,3 +154,4 @@ function getUInt64(search, data) {
     let end = bytes2 + type.length + 9;
     return data.readUInt32LE(end, true);
 }
+

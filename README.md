@@ -9,6 +9,7 @@ Usage:
 const ArkFiles = require('ark-files');
 
 let arkFiles = new ArkFiles('/path/to/my/ark/server/folder');
+
 let players = arkFiles.getPlayers();
 
 /**
@@ -36,6 +37,8 @@ let tribes = arkFiles.getTribes();
 * Name: string,
 * OwnerId: Number,
 * Id: Number,
+* TribeLogs: string[],
+* TribeMemberNames: string[],
 * FileCreated: string,
 * FileUpdated: string
 * }]

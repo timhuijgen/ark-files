@@ -123,6 +123,7 @@ class ArkFilesData {
     /**
      * Read the contents of a file
      * @param file
+     * @returns {Buffer}
      * @private
      */
     _readFile(file) {
@@ -174,6 +175,8 @@ class ArkFilesData {
      * Name: string,
      * OwnerId: Number,
      * Id: Number,
+     * TribeLogs: string[],
+     * TribeMemberNames: string[],
      * FileCreated: string,
      * FileUpdated: string
      * }}
@@ -188,6 +191,8 @@ class ArkFilesData {
             Name: util.getString("TribeName", data),
             OwnerId: parseInt(util.getUInt32("OwnerPlayerDataID", data)),
             Id: parseInt(util.getInt("TribeID", data)),
+            TribeLogs: util.getStringArray("TribeLog", data),
+            TribeMemberNames: util.getStringArray("MembersPlayerName", data),
             FileCreated: new Date(fileData.birthtime).toISOString().slice(0, 19).replace('T', ' '),
             FileUpdated: new Date(fileData.mtime).toISOString().slice(0, 19).replace('T', ' ')
         };
