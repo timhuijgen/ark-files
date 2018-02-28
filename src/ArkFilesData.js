@@ -1,6 +1,10 @@
+/**
+ * Imports
+ */
 const util = require('./util');
 const fs = require('fs');
 const path = require('path');
+const ArkBinaryParser = require('./ArkBinaryParser');
 
 /**
  * ArkFilesData class
@@ -45,7 +49,7 @@ class ArkFilesData {
      * @private
      */
     _attachPlayersToTribe(tribe, players) {
-        tribe.Players = players.filter(player => player.TribeId === tribe.Id)
+        tribe.Players = players.filter(player => player.TribeId === tribe.Id);
         return tribe;
     }
 
@@ -57,7 +61,7 @@ class ArkFilesData {
      * @private
      */
     _attachTribeToPlayer(player, tribes) {
-        player.Tribe = tribes.find(tribe => tribe.Id === player.TribeId);
+        player.Tribe = tribes.find(tribe => tribe.Id === player.TribeId) || false;
         return player;
     }
 
@@ -135,12 +139,12 @@ class ArkFilesData {
      *
      * @param file
      * @returns {{
-     * Tribe: Tribe|undefined,
+     * Tribe: Tribe|false,
      * PlayerName: string,
      * Level: Number,
      * TotalEngramPoints: Number,
      * CharacterName: string,
-     * TribeId: Number|undefined,
+     * TribeId: Number|false,
      * SteamId: Number,
      * PlayerId: Number,
      * FileCreated: string,
@@ -150,19 +154,20 @@ class ArkFilesData {
      */
     _playerFactory(file) {
         let data = this._readFile(file),
-            fileData = fs.statSync(path.join(this.arkFilesDir, file));
+            fileData = fs.statSync(path.join(this.arkFilesDir, file)),
+            binaryParser = new ArkBinaryParser(data);
 
         return {
-            Tribe: undefined,
-            PlayerName: util.getString("PlayerName", data),
-            Level: parseInt(util.getUInt16("CharacterStatusComponent_ExtraCharacterLevel", data) + 1),
-            TotalEngramPoints: parseInt(util.getInt("PlayerState_TotalEngramPoints", data)),
-            CharacterName: util.getString("PlayerCharacterName", data),
-            TribeId: parseInt(util.getInt("TribeID", data)) || undefined,
-            SteamId: parseInt(util.getSteamId(data)),
-            PlayerId: parseInt(util.getPlayerId(data)),
-            FileCreated: new Date(fileData.birthtime).toISOString().slice(0, 19).replace('T', ' '),
-            FileUpdated: new Date(fileData.mtime).toISOString().slice(0, 19).replace('T', ' ')
+            Tribe: false,
+            PlayerName: binaryParser.getProperty('PlayerName'),
+            Level: binaryParser.getProperty('CharacterStatusComponent_ExtraCharacterLevel') + 1,
+            TotalEngramPoints: binaryParser.getProperty('PlayerState_TotalEngramPoints'),
+            CharacterName: binaryParser.getProperty('PlayerCharacterName'),
+            TribeId: binaryParser.getProperty('TribeID'),
+            SteamId: binaryParser.getSteamId(),
+            PlayerId: binaryParser.getProperty('PlayerDataID'),
+            FileCreated: util.formatTime(fileData.birthtime),
+            FileUpdated: util.formatTime(fileData.mtime)
         };
     }
 
@@ -184,19 +189,19 @@ class ArkFilesData {
      */
     _tribeFactory(file) {
         let data = this._readFile(file),
-            fileData = fs.statSync(path.join(this.arkFilesDir, file));
+            fileData = fs.statSync(path.join(this.arkFilesDir, file)),
+            binaryParser = new ArkBinaryParser(data);
 
         return {
             Players: [],
-            Name: util.getString("TribeName", data),
-            OwnerId: parseInt(util.getUInt32("OwnerPlayerDataID", data)),
-            Id: parseInt(util.getInt("TribeID", data)),
-            TribeLogs: util.getStringArray("TribeLog", data),
-            TribeMemberNames: util.getStringArray("MembersPlayerName", data),
-            FileCreated: new Date(fileData.birthtime).toISOString().slice(0, 19).replace('T', ' '),
-            FileUpdated: new Date(fileData.mtime).toISOString().slice(0, 19).replace('T', ' ')
+            Name: binaryParser.getProperty('TribeName'),
+            OwnerId: binaryParser.getProperty('OwnerPlayerDataID'),
+            Id: binaryParser.getProperty('TribeID'),
+            TribeLogs: binaryParser.getProperty('TribeLog'),
+            TribeMemberNames: binaryParser.getProperty('MembersPlayerName'),
+            FileCreated: util.formatTime(fileData.birthtime),
+            FileUpdated: util.formatTime(fileData.mtime)
         };
-
     }
 }
 

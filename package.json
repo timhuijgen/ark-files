@@ -2,7 +2,7 @@
   "name": "ark-files",
   "version": "1.0.6",
   "description": "Read ark player profiles & tribe data from the saved files",
-  "main": "ArkFilesData.js",
+  "main": "src/ArkFilesData.js",
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha"
   },

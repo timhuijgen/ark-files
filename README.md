@@ -15,12 +15,12 @@ let players = arkFiles.getPlayers();
 /**
 * Players structure:
 * [{
-* Tribe: Tribe|undefined,
+* Tribe: Tribe|false,
 * PlayerName: string,
 * Level: Number,
 * TotalEngramPoints: Number,
 * CharacterName: string,
-* TribeId: Number|undefined,
+* TribeId: Number|false,
 * SteamId: Number,
 * PlayerId: Number,
 * FileCreated: string,
