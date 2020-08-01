@@ -196,7 +196,7 @@ class ArkFilesData {
             Players: [],
             Name: binaryParser.getProperty('TribeName'),
             OwnerId: binaryParser.getProperty('OwnerPlayerDataID'),
-            Id: binaryParser.getProperty('TribeID'),
+            Id: binaryParser.getProperty('TribeId'),
             TribeLogs: binaryParser.getProperty('TribeLog'),
             TribeMemberNames: binaryParser.getProperty('MembersPlayerName'),
             FileCreated: util.formatTime(fileData.birthtime),
