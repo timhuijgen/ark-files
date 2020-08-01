@@ -163,7 +163,7 @@ class ArkFilesData {
             Level: binaryParser.getProperty('CharacterStatusComponent_ExtraCharacterLevel') + 1,
             TotalEngramPoints: binaryParser.getProperty('PlayerState_TotalEngramPoints'),
             CharacterName: binaryParser.getProperty('PlayerCharacterName'),
-            TribeId: binaryParser.getProperty('TribeID'),
+            TribeId: binaryParser.getProperty('TribeId'),
             SteamId: binaryParser.getSteamId(),
             PlayerId: binaryParser.getProperty('PlayerDataID'),
             FileCreated: util.formatTime(fileData.birthtime),
