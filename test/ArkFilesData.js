@@ -5,7 +5,9 @@ const expect = chai.expect;
 
 describe('Players', () => {
     it('gets players', () => {
-        expect(arkFiles.getPlayers()).to.deep.equal([{
+        const players = arkFiles.getPlayers();
+        
+        expect(players).to.deep.equal([{
             Tribe: false,
             PlayerName: 'TimmeY',
             Level: 300,
@@ -22,7 +24,9 @@ describe('Players', () => {
 
 describe('tribes', () => {
     it('gets tribes', () => {
-        expect(arkFiles.getTribes()).to.deep.equal([{
+        const tribes = arkFiles.getTribes();
+
+        expect(tribes).to.deep.equal([{
             Players: [],
             Name: 'The Dino Police',
             OwnerId: 529159650,
