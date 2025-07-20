@@ -5,6 +5,7 @@ const util = require('./util');
 const fs = require('fs');
 const path = require('path');
 const ArkBinaryParser = require('./ArkBinaryParser');
+const { asaPlayerFactory } = require('./AsaFileHandler');
 
 /**
  * ArkFilesData class
@@ -74,6 +75,29 @@ class ArkFilesData {
             console.log('Fetching new player & tribe data from ark files');
             this.cacheTime = util.time();
             this.cache = this._fetch();
+        }
+    }
+
+    /**
+     * Detect if this is an ASA installation by checking for ASA-specific content
+     * @returns {boolean}
+     * @private
+     */
+    _isASA() {
+        try {
+            const files = this._getFiles();
+            const profileFiles = files.filter(ArkFilesData._filterArkProfiles);
+            
+            if (profileFiles.length === 0) return false;
+            
+            // Check the first profile file for ASA indicators
+            const sampleFile = profileFiles[0];
+            const data = this._readFile(sampleFile);
+            
+            // ASA files contain "RedpointEOS" string
+            return data.indexOf('RedpointEOS') !== -1;
+        } catch (error) {
+            return false;
         }
     }
 
@@ -153,6 +177,12 @@ class ArkFilesData {
      * @private
      */
     _playerFactory(file) {
+        // Check if this is an ASA file and use appropriate handler
+        if (this._isASA()) {
+            return asaPlayerFactory(file, this.arkFilesDir);
+        }
+        
+        // Default ASE handling
         let data = this._readFile(file),
             fileData = fs.statSync(path.join(this.arkFilesDir, file)),
             binaryParser = new ArkBinaryParser(data);
@@ -188,6 +218,24 @@ class ArkFilesData {
      * @private
      */
     _tribeFactory(file) {
+        // Check if this is an ASA file and handle accordingly
+        if (this._isASA()) {
+            // For now, return a minimal tribe structure for ASA files
+            // ASA tribe parsing would need similar complex logic as player parsing
+            let fileData = fs.statSync(path.join(this.arkFilesDir, file));
+            return {
+                Players: [],
+                Name: 'ASA Tribe',
+                OwnerId: 0,
+                Id: 0,
+                TribeLogs: [],
+                TribeMemberNames: [],
+                FileCreated: util.formatTime(fileData.birthtime),
+                FileUpdated: util.formatTime(fileData.mtime)
+            };
+        }
+        
+        // Default ASE handling
         let data = this._readFile(file),
             fileData = fs.statSync(path.join(this.arkFilesDir, file)),
             binaryParser = new ArkBinaryParser(data);
