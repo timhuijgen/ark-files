@@ -93,14 +93,20 @@ module.exports = class AsaBinaryParser {
     static getStringProperty(offset, buffer) {
         // For ASA format:
         // After skipping the 8 bytes (size and index), the string structure is:
-        // [4 bytes length][string data including null terminator]
+        // [1 null byte][1 byte string length][3 null bytes][string data including null terminator]
         
-        // Get property length (includes null terminator)
-        let propertyLength = buffer.readInt32LE(offset);
-        offset += 4;
+        // Skip the first null byte
+        offset += 1;
+        
+        // Get string length (includes null terminator)
+        let stringLength = buffer[offset];
+        offset += 1;
+        
+        // Skip 3 null bytes
+        offset += 3;
 
         // return value (exclude null terminator)
-        return buffer.toString('utf8', offset, offset + propertyLength - 1);
+        return buffer.toString('utf8', offset, offset + stringLength - 1);
     }
 
     /**
