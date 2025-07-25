@@ -165,8 +165,9 @@ module.exports = class BinaryParser {
      * @param {string} value
      * @returns {string}
      */
-    static trim(value) {
-        return value.replace(/\0[\s\S]*$/g,'');
-    }
+static trim(value) {
+    return value.replace(/[\x00-\x1F\x7F]+/g, '').trim();
+}
+
 
 };

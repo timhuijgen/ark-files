@@ -177,15 +177,17 @@ class ArkFilesData {
      * @private
      */
     _playerFactory(file) {
-        // Check if this is an ASA file and use appropriate handler
-        if (this._isASA()) {
-            return asaPlayerFactory(file, this.arkFilesDir);
-        }
+        // // Check if this is an ASA file and use appropriate handler
+        // if (this._isASA()) {
+        //     return asaPlayerFactory(file, this.arkFilesDir);
+        // }
         
         // Default ASE handling
         let data = this._readFile(file),
             fileData = fs.statSync(path.join(this.arkFilesDir, file)),
             binaryParser = new ArkBinaryParser(data);
+
+        let name = binaryParser.getProperty('PlayerName');
 
         return {
             Tribe: false,
