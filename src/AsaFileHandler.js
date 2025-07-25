@@ -38,7 +38,7 @@ function asaPlayerFactory(file, arkFilesDir) {
         Level: binaryParser.getProperty('CharacterStatusComponent_ExtraCharacterLevel') + 1,
         TotalEngramPoints: binaryParser.getProperty('PlayerState_TotalEngramPoints'),
         CharacterName: characterName,
-        TribeId: binaryParser.getProperty('TribeId'),
+        TribeId: binaryParser.getProperty('TribeID'),  // Fixed: TribeID not TribeId
         SteamId: steamId,
         EosId: eosId,
         PlayerId: binaryParser.getProperty('PlayerDataID'),

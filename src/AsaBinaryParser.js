@@ -33,6 +33,10 @@ module.exports = class AsaBinaryParser {
                     AsaBinaryParser.getStringProperty(offset, this.buffer)
                 );
             case 'IntProperty':
+                // Special handling for TribeID - it should be treated as unsigned
+                if (property === 'TribeID') {
+                    return AsaBinaryParser.getUInt32Property(offset + 1, this.buffer);
+                }
                 return AsaBinaryParser.getIntProperty(offset, this.buffer);
             case 'UInt16Property':
                 return AsaBinaryParser.getUInt16Property(offset, this.buffer);
@@ -193,7 +197,8 @@ module.exports = class AsaBinaryParser {
      * @returns {Number}
      */
     static getUInt64Property(offset, buffer) {
-        return buffer.readUInt32LE(offset, true);
+        // ASA format: skip first null byte, then read 4 bytes as UInt32LE
+        return buffer.readUInt32LE(offset + 1);
     }
 
     /**
