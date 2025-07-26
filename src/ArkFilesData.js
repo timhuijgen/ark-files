@@ -17,11 +17,12 @@ class ArkFilesData {
      * @param {string} arkServerDir
      * @param {Number} refreshInterval
      */
-    constructor(arkServerDir, refreshInterval = (60 * 5)) {
+    constructor(arkServerDir, refreshInterval = (60 * 5), format = 'ase') {
         this.arkFilesDir = path.join(arkServerDir, "ShooterGame", "Saved", "SavedArks");
         this.refreshInterval = refreshInterval;
         this.cache = {};
         this.cacheTime = 0;
+        this.format = format;
     }
 
     /**
@@ -177,30 +178,25 @@ class ArkFilesData {
      * @private
      */
     _playerFactory(file) {
-        // // Check if this is an ASA file and use appropriate handler
-        // if (this._isASA()) {
-        //     return asaPlayerFactory(file, this.arkFilesDir);
-        // }
-        
-        // Default ASE handling
         let data = this._readFile(file),
             fileData = fs.statSync(path.join(this.arkFilesDir, file)),
             binaryParser = new ArkBinaryParser(data);
 
-        let name = binaryParser.getProperty('PlayerName');
 
-        return {
+        const player =  {
             Tribe: false,
-            PlayerName: binaryParser.getProperty('PlayerName'),
+            PlayerName: binaryParser.getProperty('PlayerName', this.format),
             Level: binaryParser.getProperty('CharacterStatusComponent_ExtraCharacterLevel') + 1,
             TotalEngramPoints: binaryParser.getProperty('PlayerState_TotalEngramPoints'),
-            CharacterName: binaryParser.getProperty('PlayerCharacterName'),
+            CharacterName: binaryParser.getProperty('PlayerCharacterName', this.format),
             TribeId: binaryParser.getProperty('TribeId'),
             SteamId: binaryParser.getSteamId(),
             PlayerId: binaryParser.getProperty('PlayerDataID'),
             FileCreated: util.formatTime(fileData.birthtime),
             FileUpdated: util.formatTime(fileData.mtime)
         };
+
+        return player;
     }
 
     /**

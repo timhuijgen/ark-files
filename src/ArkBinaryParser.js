@@ -9,7 +9,7 @@ module.exports = class BinaryParser {
      * @param {string} property
      * @returns {*}
      */
-    getProperty(property) {
+    getProperty(property, format = 'ase') {
         let propertyOffset = this.buffer.indexOf(property);
 
         // Return false if there is none
@@ -31,7 +31,7 @@ module.exports = class BinaryParser {
                 return BinaryParser.getArrayProperty(offset, this.buffer);
             case 'StrProperty':
                 return BinaryParser.trim(
-                    BinaryParser.getStringProperty(offset, this.buffer)
+                    BinaryParser.getStringProperty(offset, this.buffer, format)
                 );
             case 'IntProperty':
                 return BinaryParser.getIntProperty(offset, this.buffer);
@@ -64,13 +64,22 @@ module.exports = class BinaryParser {
      * @param {Buffer} buffer
      * @returns {string}
      */
-    static getStringProperty(offset, buffer) {
-        // Get property length
-        let propertyLength = buffer.readInt32LE(offset);
-        offset += 4;
+    static getStringProperty(offset, buffer, format = 'ase') {
+        if (format === 'asa') {
+            // ASA format: [1 null byte][1-byte length][3 null bytes][string data + null terminator]
+            offset += 1; // Skip the first null byte
 
-        // return value
-        return buffer.toString('utf8', offset, offset + propertyLength);
+            let stringLength = buffer[offset]; // Get string length (includes null terminator)
+            offset += 1;
+            
+            offset += 3; // Skip 3 null bytes
+            return buffer.toString('utf8', offset, offset + stringLength - 1); // Exclude null terminator
+        } else {
+            // ASE format: [4-byte length][string data]
+            let propertyLength = buffer.readInt32LE(offset);
+            offset += 4;
+            return buffer.toString('utf8', offset, offset + propertyLength);
+        }
     }
 
     /**
