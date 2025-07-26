@@ -15,16 +15,21 @@ module.exports = class BinaryParser {
         // Return false if there is none
         if(propertyOffset === -1) { return false; }
 
-        let offset = propertyOffset + property.length + 1;
+        let offset = propertyOffset + property.length;
+
+        // Skip the first null byte
+        offset += 1;
+
         // Get the length of the property type
         let propertyTypeLength = this.buffer.readUInt32LE(offset);
+
         offset += 4;
         // Read the actual property type
-        let propertyType = this.buffer.toString('utf8', offset, offset + propertyTypeLength);
-        offset += propertyTypeLength;
+        let propertyType = this.buffer.toString('utf8', offset, offset + propertyTypeLength -1 );
+        offset += propertyTypeLength -1;
 
-        // Skip size and index
-        offset += 8;
+        // Skip index and null bytes
+        offset += 10;
 
         switch(propertyType.replace(/\0[\s\S]*$/g,'')) {
             case 'ArrayProperty':
@@ -66,14 +71,12 @@ module.exports = class BinaryParser {
      */
     static getStringProperty(offset, buffer, format = 'ase') {
         if (format === 'asa') {
-            // ASA format: [1 null byte][1-byte length][3 null bytes][string data + null terminator]
-            offset += 1; // Skip the first null byte
+            let propertyLength = buffer.readInt32LE(offset);
 
-            let stringLength = buffer[offset]; // Get string length (includes null terminator)
-            offset += 1;
+            // Start of the string property
+            offset += 4;
             
-            offset += 3; // Skip 3 null bytes
-            return buffer.toString('utf8', offset, offset + stringLength - 1); // Exclude null terminator
+            return buffer.toString('utf8', offset, offset + propertyLength - 1); // Exclude null terminator
         } else {
             // ASE format: [4-byte length][string data]
             let propertyLength = buffer.readInt32LE(offset);

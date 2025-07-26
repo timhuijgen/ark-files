@@ -182,19 +182,43 @@ class ArkFilesData {
             fileData = fs.statSync(path.join(this.arkFilesDir, file)),
             binaryParser = new ArkBinaryParser(data);
 
-
-        const player =  {
-            Tribe: false,
+        let player =  {
+            Tribe: false, // ASA uses TribeID, ASE uses TribeId
+            TribeId: binaryParser.getProperty('TribeID'),
+            PlayerId: binaryParser.getProperty('PlayerDataID'),
             PlayerName: binaryParser.getProperty('PlayerName', this.format),
             Level: binaryParser.getProperty('CharacterStatusComponent_ExtraCharacterLevel') + 1,
             TotalEngramPoints: binaryParser.getProperty('PlayerState_TotalEngramPoints'),
             CharacterName: binaryParser.getProperty('PlayerCharacterName', this.format),
-            TribeId: binaryParser.getProperty('TribeId'),
-            SteamId: binaryParser.getSteamId(),
-            PlayerId: binaryParser.getProperty('PlayerDataID'),
+            // SteamId: binaryParser.getSteamId(),
             FileCreated: util.formatTime(fileData.birthtime),
             FileUpdated: util.formatTime(fileData.mtime)
         };
+
+        if(this.format === 'asa') {
+            // For ASA files, we use a specialized factory function
+
+            // Get EOSId
+            const eosIdOffset = data.indexOf('RedpointEOS');
+            if (eosIdOffset !== -1) {
+                // EOSID is stored as 16 bytes after "RedpointEOS\0\0"
+                const eosIdStart = eosIdOffset + 'RedpointEOS'.length + 2; // +2 for the null bytes
+                const eosIdBytes = data.subarray(eosIdStart, eosIdStart + 16);
+                player.EosId = eosIdBytes.toString('hex');
+            } else {
+                // Fallback: extract from filename
+                player.EosId = path.basename(file, '.arkprofile');
+            }
+
+            // For ASA, SteamId doesn't exist, set to null
+            player.SteamId = null;
+
+        }
+
+
+
+        console.log(player);
+        
 
         return player;
     }

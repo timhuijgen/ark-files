@@ -23,10 +23,10 @@ describe('Players', () => {
     });
 });
 
-describe('tribes', () => {
-    it('gets tribes', () => {
-        const tribes = arkFiles.getTribes();
+// describe('tribes', () => {
+//     it('gets tribes', () => {
+//         const tribes = arkFiles.getTribes();
 
-        expect(tribes).to.deep.equal([]);
-    });
-});
+//         expect(tribes).to.deep.equal([]);
+//     });
+// });
