@@ -28,12 +28,17 @@ module.exports = class BinaryParser {
         let propertyType = this.buffer.toString('utf8', offset, offset + propertyTypeLength -1 );
         offset += propertyTypeLength -1;
 
-        // Skip index and null bytes
+        if(propertyType === 'ArrayProperty'){
+            // Skip index and null bytes
+            offset += 1;
+        } else {
+            // Skip index and null bytes
         offset += 10;
+        }
 
         switch(propertyType.replace(/\0[\s\S]*$/g,'')) {
             case 'ArrayProperty':
-                return BinaryParser.getArrayProperty(offset, this.buffer);
+                return BinaryParser.getArrayProperty(offset, this.buffer, format);
             case 'StrProperty':
                 return BinaryParser.trim(
                     BinaryParser.getStringProperty(offset, this.buffer, format)
@@ -72,9 +77,30 @@ module.exports = class BinaryParser {
     static getStringProperty(offset, buffer, format = 'ase') {
         if (format === 'asa') {
             let propertyLength = buffer.readInt32LE(offset);
-
+           
             // Start of the string property
             offset += 4;
+
+            if (propertyLength <= 0) {
+                // If we're here we have found a malformed or differently encoded string (possibly utf-16)
+                // At this point we're at the start the string value. We know that these strangely encoded strings
+                // end is two null bytes, followed by a non-null byte for the size of the next string.
+
+                // Find the next sequence of double null butes followed by a non-null byte
+                const nextNullOffset = buffer.indexOf('\0\0', offset);
+                const stringSize = nextNullOffset - offset;
+
+                if (nextNullOffset === -1) {
+                    return null;
+                } else {
+                    const stringified = buffer.toString('utf16le', offset, offset + stringSize + 1);
+                    console.log(`Malformed string found. Best attempt: ${stringified}`);
+                    
+
+                    return stringified;
+                }
+                
+            }
             
             return buffer.toString('utf8', offset, offset + propertyLength - 1); // Exclude null terminator
         } else {
@@ -90,26 +116,48 @@ module.exports = class BinaryParser {
      * @param {Buffer} buffer
      * @returns {Array}
      */
-    static getArrayProperty(offset, buffer) {
-        let arr = [],
-            propertySubtypeLength = buffer.readInt32LE(offset);
+    static getArrayProperty(offset, buffer, format = 'ase') {
+        let arr = [];
+        const potentiallyRootArraySize = buffer.readUInt32LE(offset);
+
+        // Move to the size of the subarray type 
+        offset += 4;
+        const subArrayTypeLength = buffer.readUInt32LE(offset) - 1;
+
+        // Move to the start of the subarray property name
         offset += 4;
 
-        let propertySubtype = buffer.toString('utf8', offset, offset + propertySubtypeLength);
-        offset += propertySubtypeLength;
+        let propertySubtype = buffer.toString('utf8', offset, offset + subArrayTypeLength);
+        offset += subArrayTypeLength;
+
+        // Unsure what these bytes are but this the the beginning of two bytes. The first appears to be the
+        // size of the string property. Unsure what the second one is.
+        offset+= 5;
+        
+        const potentialCompleteTextLength = buffer.readUInt32LE(offset);
+
+        // Move to the second unknown byte
+        offset += 1;
+        const unkownByteValue = buffer.readUInt32LE(offset);
+
+        // Move to the start of the array length
+        offset += 4;
 
         // Read the array length
-        let arrayLength = buffer.readUInt32LE(offset);
+        let subArraySize = buffer.readUInt32LE(offset);
+
         offset += 4;
 
         // Loop for array length
-        for(let i = 0; i < arrayLength; i++) {
+        for(let i = 0; i < subArraySize; i++) {
             // Placeholder for value
             let value;
+
             // Switch the array type
             switch(propertySubtype.replace(/\0[\s\S]*$/g,'')) {
                 case 'StrProperty':
-                    value = BinaryParser.getStringProperty(offset, buffer);
+                        value = BinaryParser.getStringProperty(offset, buffer, format);
+
                     // Add the length of the value as extra offset
                     offset += value.length;
                     break;
@@ -128,11 +176,12 @@ module.exports = class BinaryParser {
             }
 
             // Offset for the property
-            offset += 4;
+            offset += 5;
+
             // Trim and push to the array
             arr.push(BinaryParser.trim(value));
         }
-
+        
         return arr;
     }
 
@@ -178,6 +227,10 @@ module.exports = class BinaryParser {
      * @returns {string}
      */
 static trim(value) {
+    if(!value){
+        return null;
+    }
+
     return value.replace(/[\x00-\x1F\x7F]+/g, '').trim();
 }
 

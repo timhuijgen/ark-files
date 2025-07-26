@@ -215,10 +215,7 @@ class ArkFilesData {
 
         }
 
-
-
-        console.log(player);
-        
+        console.log('Player', player);
 
         return player;
     }
@@ -240,38 +237,34 @@ class ArkFilesData {
      * @private
      */
     _tribeFactory(file) {
-        // Check if this is an ASA file and handle accordingly
-        if (this._isASA()) {
-            // For now, return a minimal tribe structure for ASA files
-            // ASA tribe parsing would need similar complex logic as player parsing
-            let fileData = fs.statSync(path.join(this.arkFilesDir, file));
-            return {
-                Players: [],
-                Name: 'ASA Tribe',
-                OwnerId: 0,
-                Id: 0,
-                TribeLogs: [],
-                TribeMemberNames: [],
-                FileCreated: util.formatTime(fileData.birthtime),
-                FileUpdated: util.formatTime(fileData.mtime)
-            };
-        }
-        
+
+        try{
+
         // Default ASE handling
         let data = this._readFile(file),
             fileData = fs.statSync(path.join(this.arkFilesDir, file)),
             binaryParser = new ArkBinaryParser(data);
 
-        return {
+        const log = binaryParser.getProperty('TribeLog', this.format)
+
+        const tribe = {
             Players: [],
-            Name: binaryParser.getProperty('TribeName'),
-            OwnerId: binaryParser.getProperty('OwnerPlayerDataID'),
-            Id: binaryParser.getProperty('TribeId'),
-            TribeLogs: binaryParser.getProperty('TribeLog'),
-            TribeMemberNames: binaryParser.getProperty('MembersPlayerName'),
+            Name: binaryParser.getProperty('TribeName', this.format),
+            OwnerId: binaryParser.getProperty('OwnerPlayerDataID', this.format),
+            Id: binaryParser.getProperty('TribeID', this.format),
+            TribeLogs: log,
+            TribeMemberNames: binaryParser.getProperty('MembersPlayerName', this.format),
             FileCreated: util.formatTime(fileData.birthtime),
             FileUpdated: util.formatTime(fileData.mtime)
         };
+
+        console.log('Tribe', tribe);
+
+        return tribe;
+        } catch (error) {
+            console.error(`Error processing tribe file ${file}:`, error);
+            return null
+        }
     }
 }
 
