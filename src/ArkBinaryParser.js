@@ -41,7 +41,7 @@ module.exports = class BinaryParser {
                 return BinaryParser.getArrayProperty(offset, this.buffer, format);
             case 'StrProperty':
                 return BinaryParser.trim(
-                    BinaryParser.getStringProperty(offset, this.buffer, format)
+                    BinaryParser.getStringProperty(offset, this.buffer, format).value
                 );
             case 'IntProperty':
                 return BinaryParser.getIntProperty(offset, this.buffer);
@@ -91,23 +91,36 @@ module.exports = class BinaryParser {
                 const stringSize = nextNullOffset - offset;
 
                 if (nextNullOffset === -1) {
-                    return null;
+                    return {
+                        value: '',
+                        length: 1
+                    };
                 } else {
                     const stringified = buffer.toString('utf16le', offset, offset + stringSize + 1);
                     console.log(`Malformed string found. Best attempt: ${stringified}`);
                     
 
-                    return stringified;
+                    return {
+                        value: stringified,
+                        length: stringSize + 1
+                    };
                 }
                 
             }
             
-            return buffer.toString('utf8', offset, offset + propertyLength - 1); // Exclude null terminator
+            return {
+                value: buffer.toString('utf8', offset, offset + propertyLength - 1), // Exclude null terminator
+                length: propertyLength
+            }
         } else {
             // ASE format: [4-byte length][string data]
             let propertyLength = buffer.readInt32LE(offset);
             offset += 4;
-            return buffer.toString('utf8', offset, offset + propertyLength);
+
+            return {
+                value: buffer.toString('utf8', offset, offset + propertyLength),
+                length: propertyLength
+            }
         }
     }
 
@@ -156,7 +169,8 @@ module.exports = class BinaryParser {
             // Switch the array type
             switch(propertySubtype.replace(/\0[\s\S]*$/g,'')) {
                 case 'StrProperty':
-                        value = BinaryParser.getStringProperty(offset, buffer, format);
+                    const parsed = BinaryParser.getStringProperty(offset, buffer, format);
+                    value = parsed.value;
 
                     // Add the length of the value as extra offset
                     offset += value.length;
@@ -227,10 +241,6 @@ module.exports = class BinaryParser {
      * @returns {string}
      */
 static trim(value) {
-    if(!value){
-        return null;
-    }
-
     return value.replace(/[\x00-\x1F\x7F]+/g, '').trim();
 }
 

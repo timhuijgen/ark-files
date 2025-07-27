@@ -63,7 +63,11 @@ class ArkFilesData {
      * @private
      */
     _attachTribeToPlayer(player, tribes) {
-        player.Tribe = tribes.find(tribe => tribe.Id === player.TribeId) || false;
+        player.Tribe = tribes.find(tribe => {
+
+            // TODO: Check tribe.Id. Some fail.
+            return tribe.Id === player.TribeId
+        }) || false;
         return player;
     }
 
