@@ -1,15 +1,17 @@
+const ArkBinaryFormats = require('./ArkBinaryFormats');
 
 module.exports = class BinaryParser {
 
-    constructor(data) {
+    constructor(data, format = ArkBinaryFormats.ASE) {
         this.buffer = new Buffer(data);
+        this.format = format;
     }
 
     /**
      * @param {string} property
      * @returns {*}
      */
-    getProperty(property, format = 'ase') {
+    getProperty(property, format = ArkBinaryFormats.ASE) {
         let propertyOffset = this.buffer.indexOf(property);
 
         // Return false if there is none
@@ -56,6 +58,7 @@ module.exports = class BinaryParser {
 
     /**
      * Get steam ID from ark player file, 17 numbers.
+     * 
      * @returns {number}
      */
     getSteamId() {
@@ -70,12 +73,50 @@ module.exports = class BinaryParser {
     }
 
     /**
+     * Get EOS ID from ASA ark player file and defaults to the filename if not found.
+     *
+     * @return {string} EOS ID
+     */
+    getEosId() {
+        const eosIdOffset = this.buffer.indexOf('RedpointEOS');
+
+        if (eosIdOffset !== -1) {
+            // EOSID is stored as 16 bytes after "RedpointEOS\0\0"
+            const eosIdStart = eosIdOffset + 'RedpointEOS'.length + 2; // +2 for the null bytes
+            const eosIdBytes = this.buffer.subarray(eosIdStart, eosIdStart + 16);
+            
+            return  eosIdBytes.toString('hex');
+        } else {
+            // Fallback: extract from filename
+            return  path.basename(file, '.arkprofile');
+        }
+    }
+
+    /**
+     * Get platform identifier based on the format.
+     * 
+     * If the format is ASE, it returns the Steam ID as a number
+     * 
+     * If the format is ASA, it returns the EOS ID as a string
+     *
+     * @return {string | number} Platform identifier (Steam ID or EOS ID)
+     */
+    getPlatformIdentifier(){
+        if(this.format === ArkBinaryFormat.ASE){
+            return this.getSteamId();
+        } else if(this.format === ArkBinaryFormat.ASA) {
+            return this.getEosId();
+        }
+        
+    }
+
+    /**
      * @param {number} offset
      * @param {Buffer} buffer
      * @returns {string}
      */
-    static getStringProperty(offset, buffer, format = 'ase') {
-        if (format === 'asa') {
+    static getStringProperty(offset, buffer, format = ArkBinaryFormats.ASE) {
+        if (format === ArkBinaryFormats.ASA) {
             let propertyLength = buffer.readInt32LE(offset);
            
             // Start of the string property
@@ -129,7 +170,7 @@ module.exports = class BinaryParser {
      * @param {Buffer} buffer
      * @returns {Array}
      */
-    static getArrayProperty(offset, buffer, format = 'ase') {
+    static getArrayProperty(offset, buffer, format = ArkBinaryFormats.ASE) {
         let arr = [];
         const potentiallyRootArraySize = buffer.readUInt32LE(offset);
 
@@ -240,9 +281,7 @@ module.exports = class BinaryParser {
      * @param {string} value
      * @returns {string}
      */
-static trim(value) {
-    return value.replace(/[\x00-\x1F\x7F]+/g, '').trim();
-}
-
-
+    static trim(value) {
+        return value.replace(/[\x00-\x1F\x7F]+/g, '').trim();
+    }
 };

@@ -1,5 +1,6 @@
 const ArkFiles = require('../src/ArkFilesData');
-const arkFiles = new ArkFiles('test/assets/asa', null, 'asa');
+const ArkBinaryFormats = require('../src/ArkBinaryFormats')
+const arkFiles = new ArkFiles('test/assets/asa', null, ArkBinaryFormats.ASA);
 const chai = require('chai');
 const expect = chai.expect;
 

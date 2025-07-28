@@ -5,6 +5,7 @@ const util = require('./util');
 const fs = require('fs');
 const path = require('path');
 const ArkBinaryParser = require('./ArkBinaryParser');
+const ArkBinaryFormats = require('./ArkBinaryFormats');
 
 /**
  * ArkFilesData class
@@ -16,7 +17,7 @@ class ArkFilesData {
      * @param {string} arkServerDir
      * @param {Number} refreshInterval
      */
-    constructor(arkServerDir, refreshInterval = (60 * 5), format = 'ase') {
+    constructor(arkServerDir, refreshInterval = (60 * 5), format = ArkBinaryFormats.ASE) {
         this.arkFilesDir = path.join(arkServerDir, "ShooterGame", "Saved", "SavedArks");
         this.refreshInterval = refreshInterval;
         this.cache = {};
@@ -172,7 +173,8 @@ class ArkFilesData {
      * TotalEngramPoints: Number,
      * CharacterName: string,
      * TribeId: Number|false,
-     * SteamId: Number,
+     * SteamId?: Number,
+     * EosId?: string,
      * PlayerId: Number,
      * FileCreated: string,
      * FileUpdated: string
@@ -182,39 +184,27 @@ class ArkFilesData {
     _playerFactory(file) {
         let data = this._readFile(file),
             fileData = fs.statSync(path.join(this.arkFilesDir, file)),
-            binaryParser = new ArkBinaryParser(data);
+            binaryParser = new ArkBinaryParser(data, this.format);
 
         let player =  {
-            Tribe: false, // ASA uses TribeID, ASE uses TribeId
-            TribeId: binaryParser.getProperty('TribeID'),
-            PlayerId: binaryParser.getProperty('PlayerDataID'),
+            Tribe: false,
             PlayerName: binaryParser.getProperty('PlayerName', this.format),
             Level: binaryParser.getProperty('CharacterStatusComponent_ExtraCharacterLevel') + 1,
             TotalEngramPoints: binaryParser.getProperty('PlayerState_TotalEngramPoints'),
             CharacterName: binaryParser.getProperty('PlayerCharacterName', this.format),
-            // SteamId: binaryParser.getSteamId(),
+            PlayerId: binaryParser.getProperty('PlayerDataID'),
             FileCreated: util.formatTime(fileData.birthtime),
             FileUpdated: util.formatTime(fileData.mtime)
         };
 
-        if(this.format === 'asa') {
-            // For ASA files, we use a specialized factory function
-
-            // Get EOSId
-            const eosIdOffset = data.indexOf('RedpointEOS');
-            if (eosIdOffset !== -1) {
-                // EOSID is stored as 16 bytes after "RedpointEOS\0\0"
-                const eosIdStart = eosIdOffset + 'RedpointEOS'.length + 2; // +2 for the null bytes
-                const eosIdBytes = data.subarray(eosIdStart, eosIdStart + 16);
-                player.EosId = eosIdBytes.toString('hex');
-            } else {
-                // Fallback: extract from filename
-                player.EosId = path.basename(file, '.arkprofile');
-            }
-
-            // For ASA, SteamId doesn't exist, set to null
-            player.SteamId = null;
-
+        // ASA and ASE use different property names for certain fields
+        // or simply don't exist (SteamId and EosId)
+        if(this.format === ArkBinaryFormats.ASA) {
+            player.TribeId = binaryParser.getProperty('TribeID');
+            player.EosId = binaryParser.getEosId();
+        } else {
+            player.TribeId = binaryParser.getProperty('TribeId');
+            player.SteamId = binaryParser.getSteamId();
         }
 
         return player;
@@ -239,23 +229,29 @@ class ArkFilesData {
     _tribeFactory(file) {
 
         try{
-        // Default ASE handling
         let data = this._readFile(file),
             fileData = fs.statSync(path.join(this.arkFilesDir, file)),
             binaryParser = new ArkBinaryParser(data);
 
-        const tribe = {
+        let tribe = {
             Players: [],
             Name: binaryParser.getProperty('TribeName', this.format),
             OwnerId: binaryParser.getProperty('OwnerPlayerDataID', this.format),
-            Id: binaryParser.getProperty('TribeID', this.format),
             TribeLogs: binaryParser.getProperty('TribeLog', this.format),
             TribeMemberNames: binaryParser.getProperty('MembersPlayerName', this.format),
             FileCreated: util.formatTime(fileData.birthtime),
             FileUpdated: util.formatTime(fileData.mtime)
         };
 
+        // ASA and ASE use different tribe ID property names
+        if( this.format === ArkBinaryFormats.ASA) {
+            tribe.Id = binaryParser.getProperty('TribeID', this.format);
+        } else {
+            tribe.Id = binaryParser.getProperty('TribeId', this.format);
+        }
+
         return tribe;
+
         } catch (error) {
             console.error(`Error processing tribe file ${file}:`, error);
             return null;
