@@ -84,10 +84,10 @@ module.exports = class BinaryParser {
             if (propertyLength <= 0) {
                 // If we're here we have found a malformed or differently encoded string (possibly utf-16)
                 // At this point we're at the start the string value. We know that these strangely encoded strings
-                // end is two null bytes, followed by a non-null byte for the size of the next string.
+                // end is three null bytes, followed by a non-null byte for the size of the next string.
 
                 // Find the next sequence of double null butes followed by a non-null byte
-                const nextNullOffset = buffer.indexOf('\0\0', offset);
+                const nextNullOffset = buffer.indexOf('\0\0\0', offset);
                 const stringSize = nextNullOffset - offset;
 
                 if (nextNullOffset === -1) {
@@ -97,13 +97,12 @@ module.exports = class BinaryParser {
                     };
                 } else {
                     const stringified = buffer.toString('utf16le', offset, offset + stringSize + 1);
-                    
+
                     console.warn(`Malformed string found. Best attempt: ${stringified}`);
-                    
 
                     return {
                         value: stringified,
-                        length: stringSize + 1
+                        length: stringSize + 3 // +3 for the terminating null bytes
                     };
                 }
                 
@@ -174,7 +173,7 @@ module.exports = class BinaryParser {
                     value = parsed.value;
 
                     // Add the length of the value as extra offset
-                    offset += value.length;
+                    offset += parsed.length-1;
                     break;
                 case 'IntProperty':
                     value = BinaryParser.getIntProperty(offset, buffer);
