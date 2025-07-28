@@ -26,16 +26,28 @@ module.exports = class BinaryParser {
         let propertyTypeLength = this.buffer.readUInt32LE(offset);
 
         offset += 4;
-        // Read the actual property type
-        let propertyType = this.buffer.toString('utf8', offset, offset + propertyTypeLength -1 );
-        offset += propertyTypeLength -1;
 
-        if(propertyType === 'ArrayProperty'){
-            // Skip index and null bytes
-            offset += 1;
+        let propertyLengthOffset = 0;
+
+        // If the format is ASA, there is a -1 length offset;
+        if(format === ArkBinaryFormats.ASA) {
+            propertyLengthOffset = -1;
+        }
+
+        // Read the actual property type
+        let propertyType = this.buffer.toString('utf8', offset, offset + propertyTypeLength + propertyLengthOffset);
+        offset += propertyTypeLength + propertyLengthOffset;
+
+        if(format === ArkBinaryFormats.ASA) {
+            if(propertyType === 'ArrayProperty') {
+                // Skip index and null bytes
+                offset += 1;
+            } else {
+                // Skip index and null bytes
+                offset += 10;
+            }
         } else {
-            // Skip index and null bytes
-        offset += 10;
+            offset += 8;
         }
 
         switch(propertyType.replace(/\0[\s\S]*$/g,'')) {
@@ -110,18 +122,25 @@ module.exports = class BinaryParser {
         
     }
 
+
     /**
-     * @param {number} offset
-     * @param {Buffer} buffer
-     * @returns {string}
+     * Get string property from buffer
+     * 
+     * Handles both UTF-8 and UTF-16 encoded strings as well as ASA and ASE formats which have different offset patterns.
+     *
+     * @param {*} offset
+     * @param {*} buffer
+     * @param {*} [format=ArkBinaryFormats.ASE]
+     * @return {{value: string, number: number}} Value is the parsed string, length is the total byte length before parsing
+     * to correctly handle offset in calling function.
      */
     static getStringProperty(offset, buffer, format = ArkBinaryFormats.ASE) {
-        if (format === ArkBinaryFormats.ASA) {
-            let propertyLength = buffer.readInt32LE(offset);
+        let propertyLength = buffer.readInt32LE(offset);
            
-            // Start of the string property
-            offset += 4;
+        // Start of the string property
+        offset += 4;
 
+        if (format === ArkBinaryFormats.ASA) {
             if (propertyLength <= 0) {
                 // If we're here we have found a malformed or differently encoded string (possibly utf-16)
                 // At this point we're at the start the string value. We know that these strangely encoded strings
@@ -154,10 +173,6 @@ module.exports = class BinaryParser {
                 length: propertyLength
             }
         } else {
-            // ASE format: [4-byte length][string data]
-            let propertyLength = buffer.readInt32LE(offset);
-            offset += 4;
-
             return {
                 value: buffer.toString('utf8', offset, offset + propertyLength),
                 length: propertyLength
@@ -171,8 +186,63 @@ module.exports = class BinaryParser {
      * @returns {Array}
      */
     static getArrayProperty(offset, buffer, format = ArkBinaryFormats.ASE) {
+        if (format === ArkBinaryFormats.ASE) {
+            return BinaryParser.handleASEArrayProperty(offset, buffer);
+        } else {
+            return BinaryParser.handleAsaArrayProperty(offset, buffer);
+        }
+    }
+
+    static handleASEArrayProperty(offset, buffer){
+        let arr = [],
+        propertySubtypeLength = buffer.readInt32LE(offset);
+        offset += 4;
+
+        let propertySubtype = buffer.toString('utf8', offset, offset + propertySubtypeLength);
+        offset += propertySubtypeLength;
+
+        // Read the array length
+        let arrayLength = buffer.readUInt32LE(offset);
+        offset += 4;
+
+        // Loop for array length
+        for(let i = 0; i < arrayLength; i++) {
+            // Placeholder for value
+            let value;
+            // Switch the array type
+            switch(propertySubtype.replace(/\0[\s\S]*$/g,'')) {
+                case 'StrProperty':
+                    value = BinaryParser.getStringProperty(offset, buffer).value;
+                    // Add the length of the value as extra offset
+                    offset += value.length;
+                    break;
+                case 'IntProperty':
+                    value = BinaryParser.getIntProperty(offset, buffer);
+                    break;
+                case 'UInt16Property':
+                    value = BinaryParser.getUInt16Property(offset, buffer);
+                    break;
+                case 'UInt32Property':
+                    value = BinaryParser.getUInt32Property(offset, buffer);
+                    break;
+                case 'UInt64Property':
+                    value = BinaryParser.getUInt64Property(offset, buffer);
+                    break;
+            }
+
+            // Offset for the property
+            offset += 4;
+            // Trim and push to the array
+            arr.push(BinaryParser.trim(value));
+        }
+
+        return arr;
+    }
+
+    static handleAsaArrayProperty(offset, buffer) {
         let arr = [];
-        const potentiallyRootArraySize = buffer.readUInt32LE(offset);
+
+        const arrayRootSize = buffer.readUInt32LE(offset);
 
         // Move to the size of the subarray type 
         offset += 4;
@@ -188,18 +258,18 @@ module.exports = class BinaryParser {
         // size of the string property. Unsure what the second one is.
         offset+= 5;
         
-        const potentialCompleteTextLength = buffer.readUInt32LE(offset);
+        const expectedArrayLength = buffer.readUInt32LE(offset);
 
         // Move to the second unknown byte
         offset += 1;
-        const unkownByteValue = buffer.readUInt32LE(offset);
+        const unknownByteValue = buffer.readUInt32LE(offset);
 
         // Move to the start of the array length
         offset += 4;
 
-        // Read the array length
         let subArraySize = buffer.readUInt32LE(offset);
 
+        // Move to the start of the array values. This byte should be proceeding value length.
         offset += 4;
 
         // Loop for array length

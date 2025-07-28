@@ -63,9 +63,7 @@ class ArkFilesData {
      * @private
      */
     _attachTribeToPlayer(player, tribes) {
-        player.Tribe = tribes.find(tribe => {
-            return tribe.Id === player.TribeId
-        }) || false;
+        player.Tribe = tribes.find(tribe => tribe.Id === player.TribeId) || false;
 
         return player;
     }
@@ -83,29 +81,6 @@ class ArkFilesData {
     }
 
     /**
-     * Detect if this is an ASA installation by checking for ASA-specific content
-     * @returns {boolean}
-     * @private
-     */
-    _isASA() {
-        try {
-            const files = this._getFiles();
-            const profileFiles = files.filter(ArkFilesData._filterArkProfiles);
-            
-            if (profileFiles.length === 0) return false;
-            
-            // Check the first profile file for ASA indicators
-            const sampleFile = profileFiles[0];
-            const data = this._readFile(sampleFile);
-            
-            // ASA files contain "RedpointEOS" string
-            return data.indexOf('RedpointEOS') !== -1;
-        } catch (error) {
-            return false;
-        }
-    }
-
-    /**
      * Handles the main process of getting all tribes and players
      * @returns {{players[], tribes[]}}
      * @private
@@ -113,8 +88,8 @@ class ArkFilesData {
     _fetch() {
         const files = this._getFiles();
 
+        // Deserialize player and tribe data, filtering out null entries (that result from parsing errors)
         const players = files.filter(ArkFilesData._filterArkProfiles).map(player => this._playerFactory(player)).filter(player => player !== null);
-        
         const tribes = files.filter(ArkFilesData._filterArkTribes).map(tribe => this._tribeFactory(tribe)).filter(tribe => tribe !== null);
         
         return {
@@ -200,10 +175,10 @@ class ArkFilesData {
         // ASA and ASE use different property names for certain fields
         // or simply don't exist (SteamId and EosId)
         if(this.format === ArkBinaryFormats.ASA) {
-            player.TribeId = binaryParser.getProperty('TribeID');
+            player.TribeId = binaryParser.getProperty('TribeID', this.format);
             player.EosId = binaryParser.getEosId();
         } else {
-            player.TribeId = binaryParser.getProperty('TribeId');
+            player.TribeId = binaryParser.getProperty('TribeId', this.format);
             player.SteamId = binaryParser.getSteamId();
         }
 
