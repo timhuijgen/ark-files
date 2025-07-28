@@ -5,7 +5,6 @@ const util = require('./util');
 const fs = require('fs');
 const path = require('path');
 const ArkBinaryParser = require('./ArkBinaryParser');
-const { asaPlayerFactory } = require('./AsaFileHandler');
 
 /**
  * ArkFilesData class
@@ -218,8 +217,6 @@ class ArkFilesData {
 
         }
 
-        console.log('Player', player);
-
         return player;
     }
 
@@ -242,26 +239,21 @@ class ArkFilesData {
     _tribeFactory(file) {
 
         try{
-
         // Default ASE handling
         let data = this._readFile(file),
             fileData = fs.statSync(path.join(this.arkFilesDir, file)),
             binaryParser = new ArkBinaryParser(data);
-
-        const log = binaryParser.getProperty('TribeLog', this.format)
 
         const tribe = {
             Players: [],
             Name: binaryParser.getProperty('TribeName', this.format),
             OwnerId: binaryParser.getProperty('OwnerPlayerDataID', this.format),
             Id: binaryParser.getProperty('TribeID', this.format),
-            TribeLogs: log,
+            TribeLogs: binaryParser.getProperty('TribeLog', this.format),
             TribeMemberNames: binaryParser.getProperty('MembersPlayerName', this.format),
             FileCreated: util.formatTime(fileData.birthtime),
             FileUpdated: util.formatTime(fileData.mtime)
         };
-
-        console.log('Tribe', tribe);
 
         return tribe;
         } catch (error) {
