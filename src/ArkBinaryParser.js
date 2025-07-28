@@ -97,7 +97,8 @@ module.exports = class BinaryParser {
                     };
                 } else {
                     const stringified = buffer.toString('utf16le', offset, offset + stringSize + 1);
-                    console.log(`Malformed string found. Best attempt: ${stringified}`);
+                    
+                    console.warn(`Malformed string found. Best attempt: ${stringified}`);
                     
 
                     return {

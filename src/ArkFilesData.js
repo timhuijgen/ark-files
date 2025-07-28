@@ -64,10 +64,9 @@ class ArkFilesData {
      */
     _attachTribeToPlayer(player, tribes) {
         player.Tribe = tribes.find(tribe => {
-
-            // TODO: Check tribe.Id. Some fail.
             return tribe.Id === player.TribeId
         }) || false;
+
         return player;
     }
 
@@ -112,15 +111,15 @@ class ArkFilesData {
      * @private
      */
     _fetch() {
-        let files = this._getFiles(),
-            data = {
-                players: files.filter(ArkFilesData._filterArkProfiles).map(player => this._playerFactory(player)),
-                tribes: files.filter(ArkFilesData._filterArkTribes).map(tribe => this._tribeFactory(tribe))
-            };
+        const files = this._getFiles();
 
+        const players = files.filter(ArkFilesData._filterArkProfiles).map(player => this._playerFactory(player)).filter(player => player !== null);
+        
+        const tribes = files.filter(ArkFilesData._filterArkTribes).map(tribe => this._tribeFactory(tribe)).filter(tribe => tribe !== null);
+        
         return {
-            players: data.players.map(player => this._attachTribeToPlayer(player, data.tribes)),
-            tribes: data.tribes.map(tribe => this._attachPlayersToTribe(tribe, data.players))
+            players: players.map(player => this._attachTribeToPlayer(player, tribes)),
+            tribes: tribes.map(tribe => this._attachPlayersToTribe(tribe, players))
         }
     }
 
@@ -267,7 +266,7 @@ class ArkFilesData {
         return tribe;
         } catch (error) {
             console.error(`Error processing tribe file ${file}:`, error);
-            return null
+            return null;
         }
     }
 }
