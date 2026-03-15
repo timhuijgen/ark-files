@@ -208,11 +208,13 @@ class ArkFilesData {
             fileData = fs.statSync(path.join(this.arkFilesDir, file)),
             binaryParser = new ArkBinaryParser(data);
 
+        const logs = binaryParser.getProperty('TribeLog', this.format);
+
         let tribe = {
             Players: [],
             Name: binaryParser.getProperty('TribeName', this.format),
             OwnerId: binaryParser.getProperty('OwnerPlayerDataID', this.format),
-            TribeLogs: binaryParser.getProperty('TribeLog', this.format),
+            TribeLogs: logs,
             TribeMemberNames: binaryParser.getProperty('MembersPlayerName', this.format),
             FileCreated: util.formatTime(fileData.birthtime),
             FileUpdated: util.formatTime(fileData.mtime)

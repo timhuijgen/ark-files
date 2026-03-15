@@ -27,11 +27,11 @@ module.exports = class BinaryParser {
 
         offset += 4;
 
-        let propertyLengthOffset = 0;
+        let propertyLengthOffset = -1;
 
         // If the format is ASA, there is a -1 length offset;
         if(format === ArkBinaryFormats.ASA) {
-            propertyLengthOffset = -1;
+            propertyLengthOffset = -2;
         }
 
         // Read the actual property type
@@ -47,7 +47,7 @@ module.exports = class BinaryParser {
                 offset += 10;
             }
         } else {
-            offset += 8;
+            offset += 9;
         }
 
         switch(propertyType.replace(/\0[\s\S]*$/g,'')) {
@@ -174,8 +174,8 @@ module.exports = class BinaryParser {
             }
         } else {
             return {
-                value: buffer.toString('utf8', offset, offset + propertyLength),
-                length: propertyLength
+                value: buffer.toString('utf8', offset, offset + propertyLength-1),
+                length: propertyLength-1
             }
         }
     }
