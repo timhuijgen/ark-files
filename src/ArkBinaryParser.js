@@ -213,8 +213,8 @@ module.exports = class BinaryParser {
             switch(propertySubtype.replace(/\0[\s\S]*$/g,'')) {
                 case 'StrProperty':
                     value = BinaryParser.getStringProperty(offset, buffer).value;
-                    // Add the length of the value as extra offset
-                    offset += value.length;
+                    // Add the length of the value as extra offset (+1 for null terminator)
+                    offset += value.length + 1;
                     break;
                 case 'IntProperty':
                     value = BinaryParser.getIntProperty(offset, buffer);

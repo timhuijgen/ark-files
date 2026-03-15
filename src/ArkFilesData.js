@@ -206,7 +206,7 @@ class ArkFilesData {
         try{
         let data = this._readFile(file),
             fileData = fs.statSync(path.join(this.arkFilesDir, file)),
-            binaryParser = new ArkBinaryParser(data);
+            binaryParser = new ArkBinaryParser(data, this.format);
 
         const logs = binaryParser.getProperty('TribeLog', this.format);
 
@@ -220,12 +220,7 @@ class ArkFilesData {
             FileUpdated: util.formatTime(fileData.mtime)
         };
 
-        // ASA and ASE use different tribe ID property names
-        if( this.format === ArkBinaryFormats.ASA) {
-            tribe.Id = binaryParser.getProperty('TribeID', this.format);
-        } else {
-            tribe.Id = binaryParser.getProperty('TribeId', this.format);
-        }
+        tribe.Id = binaryParser.getProperty('TribeID', this.format);
 
         return tribe;
 
