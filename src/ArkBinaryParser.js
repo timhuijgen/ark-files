@@ -11,11 +11,12 @@ module.exports = class BinaryParser {
      * @param {string} property
      * @returns {*}
      */
-    getProperty(property, format = ArkBinaryFormats.ASE) {
+    getProperty(property, format = ArkBinaryFormats.ASE, searchRange = 0) {
         let propertyOffset = this.buffer.indexOf(property);
 
-        // Return false if there is none
+        // Return false if there is none or if beyond the search range
         if(propertyOffset === -1) { return false; }
+        if(searchRange > 0 && propertyOffset > searchRange) { return false; }
 
         let offset = propertyOffset + property.length;
 
@@ -27,24 +28,20 @@ module.exports = class BinaryParser {
 
         offset += 4;
 
-        let propertyLengthOffset = -1;
-
-        // If the format is ASA, there is a -1 length offset;
-        if(format === ArkBinaryFormats.ASA) {
-            propertyLengthOffset = -2;
-        }
-
-        // Read the actual property type
-        let propertyType = this.buffer.toString('utf8', offset, offset + propertyTypeLength + propertyLengthOffset);
-        offset += propertyTypeLength + propertyLengthOffset;
+        // Type length includes null terminator; read type name without it
+        let propertyType = this.buffer.toString('utf8', offset, offset + propertyTypeLength - 1);
+        offset += propertyTypeLength - 1;
 
         if(format === ArkBinaryFormats.ASA) {
             if(propertyType === 'ArrayProperty') {
                 // Skip index and null bytes
                 offset += 1;
-            } else {
-                // Skip index and null bytes
+            } else if(propertyType === 'StrProperty') {
+                // Skip null terminator + field(4) + data_size(4) + encoding byte(1)
                 offset += 10;
+            } else {
+                // Skip null terminator + field(4) + data_size(4)
+                offset += 9;
             }
         } else {
             offset += 9;

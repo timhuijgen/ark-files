@@ -164,10 +164,10 @@ class ArkFilesData {
         let player =  {
             Tribe: false,
             PlayerName: binaryParser.getProperty('PlayerName', this.format),
-            Level: binaryParser.getProperty('CharacterStatusComponent_ExtraCharacterLevel') + 1,
-            TotalEngramPoints: binaryParser.getProperty('PlayerState_TotalEngramPoints'),
+            Level: binaryParser.getProperty('CharacterStatusComponent_ExtraCharacterLevel', this.format) + 1,
+            TotalEngramPoints: binaryParser.getProperty('PlayerState_TotalEngramPoints', this.format),
             CharacterName: binaryParser.getProperty('PlayerCharacterName', this.format),
-            PlayerId: binaryParser.getProperty('PlayerDataID'),
+            PlayerId: binaryParser.getProperty('PlayerDataID', this.format),
             FileCreated: util.formatTime(fileData.birthtime),
             FileUpdated: util.formatTime(fileData.mtime)
         };
@@ -175,7 +175,7 @@ class ArkFilesData {
         // ASA and ASE use different property names for certain fields
         // or simply don't exist (SteamId and EosId)
         if(this.format === ArkBinaryFormats.ASA) {
-            player.TribeId = binaryParser.getProperty('TribeID', this.format);
+            player.TribeId = binaryParser.getProperty('TribeID', this.format, data.length / 2);
             player.EosId = binaryParser.getEosId();
         } else {
             player.TribeId = binaryParser.getProperty('TribeId', this.format);
