@@ -5,6 +5,7 @@ const util = require('./util');
 const fs = require('fs');
 const path = require('path');
 const ArkBinaryParser = require('./ArkBinaryParser');
+const ArkBinaryFormats = require('./ArkBinaryFormats');
 
 /**
  * ArkFilesData class
@@ -16,11 +17,12 @@ class ArkFilesData {
      * @param {string} arkServerDir
      * @param {Number} refreshInterval
      */
-    constructor(arkServerDir, refreshInterval = (60 * 5)) {
+    constructor(arkServerDir, refreshInterval = (60 * 5), format = ArkBinaryFormats.ASE) {
         this.arkFilesDir = path.join(arkServerDir, "ShooterGame", "Saved", "SavedArks");
         this.refreshInterval = refreshInterval;
         this.cache = {};
         this.cacheTime = 0;
+        this.format = format;
     }
 
     /**
@@ -62,6 +64,7 @@ class ArkFilesData {
      */
     _attachTribeToPlayer(player, tribes) {
         player.Tribe = tribes.find(tribe => tribe.Id === player.TribeId) || false;
+
         return player;
     }
 
@@ -83,15 +86,15 @@ class ArkFilesData {
      * @private
      */
     _fetch() {
-        let files = this._getFiles(),
-            data = {
-                players: files.filter(ArkFilesData._filterArkProfiles).map(player => this._playerFactory(player)),
-                tribes: files.filter(ArkFilesData._filterArkTribes).map(tribe => this._tribeFactory(tribe))
-            };
+        const files = this._getFiles();
 
+        // Deserialize player and tribe data, filtering out null entries (that result from parsing errors)
+        const players = files.filter(ArkFilesData._filterArkProfiles).map(player => this._playerFactory(player)).filter(player => player !== null);
+        const tribes = files.filter(ArkFilesData._filterArkTribes).map(tribe => this._tribeFactory(tribe)).filter(tribe => tribe !== null);
+        
         return {
-            players: data.players.map(player => this._attachTribeToPlayer(player, data.tribes)),
-            tribes: data.tribes.map(tribe => this._attachPlayersToTribe(tribe, data.players))
+            players: players.map(player => this._attachTribeToPlayer(player, tribes)),
+            tribes: tribes.map(tribe => this._attachPlayersToTribe(tribe, players))
         }
     }
 
@@ -145,7 +148,8 @@ class ArkFilesData {
      * TotalEngramPoints: Number,
      * CharacterName: string,
      * TribeId: Number|false,
-     * SteamId: Number,
+     * SteamId?: Number,
+     * EosId?: string,
      * PlayerId: Number,
      * FileCreated: string,
      * FileUpdated: string
@@ -155,20 +159,30 @@ class ArkFilesData {
     _playerFactory(file) {
         let data = this._readFile(file),
             fileData = fs.statSync(path.join(this.arkFilesDir, file)),
-            binaryParser = new ArkBinaryParser(data);
+            binaryParser = new ArkBinaryParser(data, this.format);
 
-        return {
+        let player =  {
             Tribe: false,
-            PlayerName: binaryParser.getProperty('PlayerName'),
-            Level: binaryParser.getProperty('CharacterStatusComponent_ExtraCharacterLevel') + 1,
-            TotalEngramPoints: binaryParser.getProperty('PlayerState_TotalEngramPoints'),
-            CharacterName: binaryParser.getProperty('PlayerCharacterName'),
-            TribeId: binaryParser.getProperty('TribeId'),
-            SteamId: binaryParser.getSteamId(),
-            PlayerId: binaryParser.getProperty('PlayerDataID'),
+            PlayerName: binaryParser.getProperty('PlayerName', this.format),
+            Level: binaryParser.getProperty('CharacterStatusComponent_ExtraCharacterLevel', this.format) + 1,
+            TotalEngramPoints: binaryParser.getProperty('PlayerState_TotalEngramPoints', this.format),
+            CharacterName: binaryParser.getProperty('PlayerCharacterName', this.format),
+            PlayerId: binaryParser.getProperty('PlayerDataID', this.format),
             FileCreated: util.formatTime(fileData.birthtime),
             FileUpdated: util.formatTime(fileData.mtime)
         };
+
+        // ASA and ASE use different property names for certain fields
+        // or simply don't exist (SteamId and EosId)
+        if(this.format === ArkBinaryFormats.ASA) {
+            player.TribeId = binaryParser.getProperty('TribeID', this.format);
+            player.EosId = binaryParser.getEosId();
+        } else {
+            player.TribeId = binaryParser.getProperty('TribeId', this.format);
+            player.SteamId = binaryParser.getSteamId();
+        }
+
+        return player;
     }
 
     /**
@@ -188,20 +202,35 @@ class ArkFilesData {
      * @private
      */
     _tribeFactory(file) {
+
+        try{
         let data = this._readFile(file),
             fileData = fs.statSync(path.join(this.arkFilesDir, file)),
-            binaryParser = new ArkBinaryParser(data);
+            binaryParser = new ArkBinaryParser(data, this.format);
 
-        return {
+        const logs = binaryParser.getProperty('TribeLog', this.format);
+
+        let tribe = {
             Players: [],
-            Name: binaryParser.getProperty('TribeName'),
-            OwnerId: binaryParser.getProperty('OwnerPlayerDataID'),
-            Id: binaryParser.getProperty('TribeId'),
-            TribeLogs: binaryParser.getProperty('TribeLog'),
-            TribeMemberNames: binaryParser.getProperty('MembersPlayerName'),
+            Name: binaryParser.getProperty('TribeName', this.format),
+            OwnerId: binaryParser.getProperty(
+                this.format === ArkBinaryFormats.ASA ? 'OwnerPlayerDataId' : 'OwnerPlayerDataID',
+                this.format
+            ),
+            TribeLogs: logs,
+            TribeMemberNames: binaryParser.getProperty('MembersPlayerName', this.format),
             FileCreated: util.formatTime(fileData.birthtime),
             FileUpdated: util.formatTime(fileData.mtime)
         };
+
+        tribe.Id = binaryParser.getProperty('TribeID', this.format);
+
+        return tribe;
+
+        } catch (error) {
+            console.error(`Error processing tribe file ${file}:`, error);
+            return null;
+        }
     }
 }
 
@@ -210,3 +239,5 @@ class ArkFilesData {
  * @type {ArkFilesData}
  */
 module.exports = ArkFilesData;
+module.exports.ArkFiles = ArkFilesData;
+module.exports.ArkBinaryFormats = ArkBinaryFormats;

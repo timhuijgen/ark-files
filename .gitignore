@@ -138,3 +138,6 @@ typings/
 
 # package lock
 package-lock.json
+
+# Scratchpad test files
+scratch/
