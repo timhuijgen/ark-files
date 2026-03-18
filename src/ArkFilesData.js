@@ -213,7 +213,10 @@ class ArkFilesData {
         let tribe = {
             Players: [],
             Name: binaryParser.getProperty('TribeName', this.format),
-            OwnerId: binaryParser.getProperty('OwnerPlayerDataID', this.format),
+            OwnerId: binaryParser.getProperty(
+                this.format === ArkBinaryFormats.ASA ? 'OwnerPlayerDataId' : 'OwnerPlayerDataID',
+                this.format
+            ),
             TribeLogs: logs,
             TribeMemberNames: binaryParser.getProperty('MembersPlayerName', this.format),
             FileCreated: util.formatTime(fileData.birthtime),

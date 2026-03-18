@@ -186,7 +186,7 @@ module.exports = class BinaryParser {
         if (format === ArkBinaryFormats.ASE) {
             return BinaryParser.handleASEArrayProperty(offset, buffer);
         } else {
-            return BinaryParser.handleAsaArrayProperty(offset, buffer);
+            return BinaryParser.handleAsaArrayProperty(offset, buffer, format);
         }
     }
 
@@ -236,7 +236,7 @@ module.exports = class BinaryParser {
         return arr;
     }
 
-    static handleAsaArrayProperty(offset, buffer) {
+    static handleAsaArrayProperty(offset, buffer, format = ArkBinaryFormats.ASA) {
         let arr = [];
 
         const arrayRootSize = buffer.readUInt32LE(offset);
