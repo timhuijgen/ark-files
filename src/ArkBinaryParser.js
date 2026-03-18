@@ -40,8 +40,8 @@ module.exports = class BinaryParser {
                 // Skip null terminator + field(4) + data_size(4) + encoding byte(1)
                 offset += 10;
             } else {
-                // Skip null terminator + field(4) + data_size(4)
-                offset += 9;
+                // Skip null terminator + field(4) + data_size(4) + HasPropertyGuid byte(1)
+                offset += 10;
             }
         } else {
             offset += 9;

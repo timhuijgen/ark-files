@@ -175,7 +175,7 @@ class ArkFilesData {
         // ASA and ASE use different property names for certain fields
         // or simply don't exist (SteamId and EosId)
         if(this.format === ArkBinaryFormats.ASA) {
-            player.TribeId = binaryParser.getProperty('TribeID', this.format, data.length / 2);
+            player.TribeId = binaryParser.getProperty('TribeID', this.format);
             player.EosId = binaryParser.getEosId();
         } else {
             player.TribeId = binaryParser.getProperty('TribeId', this.format);
