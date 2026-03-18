@@ -62,6 +62,7 @@ describe('ASA Players', () => {
     expect(player.PlayerName).to.equal('Chuck Finley');
     expect(player.CharacterName).to.equal('Giga');
     expect(player.EosId).to.equal('00028acaa47a4fd886c64adf4ed87d48');
+    expect(player.TribeId).to.equal(1168628130);
     expect(player.Level).to.equal(195);
     expect(player.TotalEngramPoints).to.equal(11534);
     expect(player.PlayerId).to.equal(161090715);
