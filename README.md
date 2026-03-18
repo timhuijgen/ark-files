@@ -18,10 +18,9 @@ let tribes = arkFiles.getTribes();
 
 ### ARK: Survival Ascended (ASA)
 ```js
-const ArkFiles = require('ark-files');
-const { ASA } = require('ark-files/src/ArkBinaryFormats');
+const { ArkFiles, ArkBinaryFormats } = require('ark-files');
 
-let arkFiles = new ArkFiles('/path/to/my/ark/server/folder', null, ASA);
+let arkFiles = new ArkFiles('/path/to/my/ark/server/folder', null, ArkBinaryFormats.ASA);
 
 let players = arkFiles.getPlayers();
 let tribes = arkFiles.getTribes();
@@ -74,6 +73,6 @@ You can pass overrides to the constructor:
 new ArkFiles('/path/', (60 * 60)); // 1 hour
 
 // ASA format with custom cache interval
-const { ASA } = require('ark-files/src/ArkBinaryFormats');
-new ArkFiles('/path/', (60 * 60), ASA);
+const { ArkFiles, ArkBinaryFormats } = require('ark-files');
+new ArkFiles('/path/', (60 * 60), ArkBinaryFormats.ASA);
 ```

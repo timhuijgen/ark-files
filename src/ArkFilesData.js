@@ -239,3 +239,5 @@ class ArkFilesData {
  * @type {ArkFilesData}
  */
 module.exports = ArkFilesData;
+module.exports.ArkFiles = ArkFilesData;
+module.exports.ArkBinaryFormats = ArkBinaryFormats;
